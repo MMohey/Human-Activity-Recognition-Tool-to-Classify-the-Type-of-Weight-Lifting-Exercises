@@ -2,9 +2,7 @@
 title: "HAR Tool Report"
 author: "Moh A"
 date: "02/04/2017"
-output: 
-  html_document: 
-    keep_md: yes
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
