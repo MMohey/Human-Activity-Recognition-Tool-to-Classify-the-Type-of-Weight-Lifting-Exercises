@@ -20,7 +20,7 @@ Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4d1GCDX2m
 library(caret)
 ```
 
-## Download the Data
+## Download  and Read the Data
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 dataset_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -32,18 +32,32 @@ if (!file.exists("./data")){
 if(!file.exists(dataset_filename)){
     download.file(dataset_url, destfile = dataset_filename, method = "curl")
 }
+
+raw_data <- read.table("./data/pml-training.csv", header = TRUE, sep = ",",  na.strings = c(NA, ""))
+```
+
+The raw data file has 19622 observations and 160 variable.
+
+## Clean the data
+
+Firstly, looking at the plot below for the amount of the missing data, it can be noticed that it has many variables with mostly missing and meaningless values. Thus, their contribution to the predition of the 'classe' variable is insignificant and we have to omit these variables.
+
+Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. Those incluse non-sensory information like: 'X'(raw number), user_name and time and date related variables.  
+
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+aggr(raw_data, prop=T, numbers=T)
+mojority_NA_columns <- which(sapply(raw_data, function(x) sum(is.na(x)) >(nrow(raw_data)*0.9)))
+cleaned_data <- raw_data[, -mojority_NA_columns]
+cleaned_data <- cleaned_data[, -(1:6)]
 ```
 
 
-## Read the Data
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
-raw_data <- read.table("./data/pml-training.csv", header = TRUE, sep = ",",  na.strings = c(NA, ""))
-
-summary(raw_data)
-mojority_NA_columns <- which(sapply(raw_data, function(x) sum(is.na(x)) >(nrow(raw_data)*0.9)))
-cleaned_data <- raw_data[, -mojority_NA_columns]
-cleaned_data <- cleaned_data[, -(1:7)]
+library(parallel)
+library(doParallel)
+library(mlbench)
 
 set.seed(55555)
 inTrain <- createDataPartition(y=cleaned_data$classe,
@@ -51,8 +65,14 @@ p=0.7, list=FALSE)
 training <- cleaned_data[inTrain,]
 testing <- cleaned_data[-inTrain,]
 
-train_control <- trainControl(method="cv", number=10)
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+train_control <- trainControl(method="cv", number=10, allowParallel = TRUE)
 model_RF <- train(classe~., data = training, methods = "rf",trControl = train_control)
+
+stopCluster(cluster)
+registerDoSEQ()
 
 predict_RF <- predict(model_RF, testing)
 confusionMatrix(testing$classe, predict_RF)
