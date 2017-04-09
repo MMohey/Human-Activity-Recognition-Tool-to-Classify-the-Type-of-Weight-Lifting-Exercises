@@ -9,9 +9,46 @@ output:
 
 # Executive Summary
 
+
+
+## Background
+
 Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, **the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise**. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. The participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), while the other 4 classes (B, C, D and E) correspond to common mistakes.
 
 Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4d1GCDX2m
+
+# Exploratory Data Analysis
+
+In the dataset given, there is 19622 observations and 160 variable.
+
+The dependent variable, 'Classe', is a categorical variable corresponding to the five different ways of doing the weight lifting exercise: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+The rest of the variable corresponds to measurements from date, time, belt, arm, forearm and dumbbell sensors.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+classe_table <- table(raw_data$classe)
+classe_percent <- (100*classe_table)/length(raw_data$classe)
+kable(rbind(classe_table, classe_percent))
+```
+
+
+```{r}
+name_per_classe <-table(raw_data$classe, raw_data$user_name)
+
+barplot(name_per_classe,
+xlab = "Subject",
+ylab = "Frequency",
+main="Exercise Quality by Subject",
+col = as.factor(rownames(name_per_classe)),
+beside=TRUE
+)
+
+legend("topright" ,legend= rownames(name_per_classe), fill  = as.factor(rownames(name_per_classe)))
+```
+
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4dkhaGN9v
+
 
 # Data PreProcessing
 
