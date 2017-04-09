@@ -31,6 +31,9 @@ classe_percent <- (100*classe_table)/length(raw_data$classe)
 kable(rbind(classe_table, classe_percent))
 ```
 
+As seen in the table above, class 'A' (corresponding to correctly performing the exercise) is most frequent class and counts to roughly 28% among the five classes available. 
+
+It is also worth noticing that frequency of class 'A' and hence the quality of performing the exercise varies significantly among the six participant, as evident in the barplot below.
 
 ```{r}
 name_per_classe <-table(raw_data$classe, raw_data$user_name)
@@ -46,22 +49,25 @@ beside=TRUE
 legend("topright" ,legend= rownames(name_per_classe), fill  = as.factor(rownames(name_per_classe)))
 ```
 
-
-Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4dkhaGN9v
-
+The aim of the classification model is to classify if exercise was completed correctly (class A) as well as classifying the type of error made ( class: B, C, D and E). Since the task given was to predict the class of 20 unknown observations. A model with an accuracy higher than 95% is needed. For example, the probability of a model with 95% accuracy to predict all cases (20/20) correctly is $p{20} = 0.95^20 = 0.36$. In contrast, a model with 99% accuracy will achieve $0.99^20 = 0.8$ probability in predicting the 20 cases correctly. 
 
 # Data PreProcessing
 
 ## Load Libraries
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(caret)
+library(ggplot2)
+library(knitr)
+library(VIM)
 ```
 
 ## Download  and Read the Data
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 dataset_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+validation_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 dataset_filename <- "./data/pml-training.csv"
+validation_filename <- "./data/pml-testing.csv"
 
 if (!file.exists("./data")){
     dir.create("./data")
@@ -70,24 +76,47 @@ if(!file.exists(dataset_filename)){
     download.file(dataset_url, destfile = dataset_filename, method = "curl")
 }
 
+if(!file.exists(validation_filename)){
+    download.file(validation_url, destfile = validation_filename, method = "curl")
+}
+
 raw_data <- read.table("./data/pml-training.csv", header = TRUE, sep = ",",  na.strings = c(NA, ""))
+
+validation_set <- read.table("./data/pml-testing.csv", header = TRUE, sep = ",",  na.strings = c(NA, ""))
 ```
 
 The raw data file has 19622 observations and 160 variable.
 
 ## Clean the data
 
-Firstly, looking at the plot below for the amount of the missing data, it can be noticed that it has many variables with mostly missing and meaningless values. Thus, their contribution to the predition of the 'classe' variable is insignificant and we have to omit these variables.
+Firstly, looking at the plot below for the proportion of missing data among the dataset variables, it can be noticed that it has many variables with mostly missing and meaningless values (100 out of the 160 variables). Thus, their contribution to the predition of the 'classe' variable is insignificant and we have to omit these variables.
 
-Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. Those incluse non-sensory information like: 'X'(raw number), user_name and time and date related variables.  
+Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. Those incluse non-sensory measurements like: 'X'(row number), time and date related variables.
+
+The rest of the variables have no missing values and are ready for further processing.
 
 
-```{r, message=FALSE, warning=FALSE, include=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 aggr(raw_data, prop=T, numbers=T)
 mojority_NA_columns <- which(sapply(raw_data, function(x) sum(is.na(x)) >(nrow(raw_data)*0.9)))
 cleaned_data <- raw_data[, -mojority_NA_columns]
-cleaned_data <- cleaned_data[, -(1:6)]
+cleaned_data <- cleaned_data[, -c(1,3,4,5,6)]
 ```
+
+
+# Data Modeling
+
+## Cross Validation & Out of Sample Error Estimation
+
+K-fold cross validation is used to estimate the out of sample error, which is a reasonable balance between prediction accuracy and the computation time. The advantage of this method is that it matters less how the data gets divided. Every data point gets to be in a test set exactly once, and gets to be in a training set k-1 times. The variance of the resulting estimate is reduced as k is increased. The disadvantage of this method is that the training algorithm has to be rerun from scratch k times, which means it takes k times as much computation to make an evaluation. The results are then aggregated to create an overall estimate of the out of sample error. 
+
+### Model 1: Linear Discriminant Analysis 
+
+This model was selected since it is a relatively simple classification algorithm with fast training and prediction speed. However, it has a low average predictive accuracy and does not automatically learns feature interactions. Therefore, it could help in serving as a baseline for prediction accuracy.
+
+The model scored an overall accuracy of 99.9%, with the highest sensitivity being 1 for classifying an exercise as class A when it is indeed A. The model also achieved high sensitivity values for other classes (B, C, D and E) as well. The confusion matrix illustrates that a classification model based on linear discriminant analysis have sufficient accuracy to expect perfect or near-perfect classification of our unknown validation cases.
+
+### Model 2: Random Forest
 
 
 
@@ -102,8 +131,18 @@ p=0.7, list=FALSE)
 training <- cleaned_data[inTrain,]
 testing <- cleaned_data[-inTrain,]
 
-cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+cluster <- makeCluster(detectCores() ) # convention to leave 1 core for OS
 registerDoParallel(cluster)
+
+intervalStart <- Sys.time()
+lda_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
+lda_model <- train(classe~., data = training, methods= 'lda', trControl = lda_control)
+intervalEnd <- Sys.time()
+
+paste("Linear Discriminant Analysis Model took: ", intervalEnd- intervalStart, attr(intervalEnd- intervalStart, "units"))
+
+lda_test_predict <- predict(lda_model, testing)
+confusionMatrix(lda_test_predict, testing$classe)
 
 train_control <- trainControl(method="cv", number=10, allowParallel = TRUE)
 model_RF <- train(classe~., data = training, methods = "rf",trControl = train_control)
