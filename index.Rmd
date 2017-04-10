@@ -114,11 +114,11 @@ K-fold cross validation is used to estimate the out of sample error, which is a 
 
 This model was selected since it is a relatively simple classification algorithm with fast training and prediction speed. However, it has a low average predictive accuracy and does not automatically learns feature interactions. Therefore, it could help in serving as a baseline for prediction accuracy.
 
-The model scored an overall accuracy of 99.9%, with the highest sensitivity being 1 for classifying an exercise as class A when it is indeed A. The model also achieved high sensitivity values for other classes (B, C, D and E) as well. The confusion matrix illustrates that a classification model based on linear discriminant analysis have sufficient accuracy to expect perfect or near-perfect classification of our unknown validation cases.
+The model scored an overall accuracy of 99.85%, with the highest sensitivity being 1 for classifying an exercise as class A when it is indeed A. The model also achieved high sensitivity values for other classes (B, C, D and E) as well. The confusion matrix illustrates that a classification model based on linear discriminant analysis have sufficient accuracy to expect perfect or near-perfect classification of our unknown validation cases.
 
 ### Model 2: Random Forest
 
-
+The random forest model, being an ensemble learning method for classification, uses multiple learning algorithms to obtain better predictive performance than could be obtained from any of the constituent learning algorithms alone. Random forests have a high predictive accuracy, automatically learns feature interactions and handles lots of irrelevant features well. However, results have a less interpretability than linear discriminant analysis and it has a slow training speed. Same as LDA model, k-fold cross validation with five folds are used.
 
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
 library(parallel)
@@ -143,6 +143,30 @@ paste("Linear Discriminant Analysis Model took: ", intervalEnd- intervalStart, a
 
 lda_test_predict <- predict(lda_model, testing)
 confusionMatrix(lda_test_predict, testing$classe)
+
+##################################
+intervalStart <- Sys.time()
+rf_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
+rf_model <- train(classe~., data = training, methods= 'rf', trControl = rf_control)
+intervalEnd <- Sys.time()
+
+paste("Random Forest Model took: ", intervalEnd- intervalStart, attr(intervalEnd- intervalStart, "units"))
+
+rf_test_predict <- predict(rf_model, testing)
+confusionMatrix(rf_test_predict, testing$classe)
+##################################
+
+##################################
+intervalStart <- Sys.time()
+nnet_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
+nnet_model <- train(classe~., data = training, methods= 'nnet', trControl = nnet_control)
+intervalEnd <- Sys.time()
+
+paste("Neural Networl Model took: ", intervalEnd- intervalStart, attr(intervalEnd- intervalStart, "units"))
+
+nnet_test_predict <- predict(nnet_model, testing)
+confusionMatrix(_test_predict, testing$classe)
+##################################
 
 train_control <- trainControl(method="cv", number=10, allowParallel = TRUE)
 model_RF <- train(classe~., data = training, methods = "rf",trControl = train_control)
