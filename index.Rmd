@@ -25,45 +25,95 @@ The dependent variable, 'Classe', is a categorical variable corresponding to the
 
 The rest of the variable corresponds to measurements from date, time, belt, arm, forearm and dumbbell sensors.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-classe_table <- table(raw_data$classe)
-classe_percent <- (100*classe_table)/length(raw_data$classe)
-kable(rbind(classe_table, classe_percent))
+
+```{r ref.label="load_libraries", echo=FALSE, message=FALSE, warning=FALSE}
+# Load the libraries needed.
+```
+
+```{r ref.label="data_download_read",message=FALSE, warning=FALSE}
+# Download the Data and read it into R
+```
+
+```{r ref.label="count_classe_table", echo=FALSE, message=FALSE, warning=FALSE}
+# Make a table for counts and percentage per classe
 ```
 
 As seen in the table above, class 'A' (corresponding to correctly performing the exercise) is most frequent class and counts to roughly 28% among the five classes available. 
 
 It is also worth noticing that frequency of class 'A' and hence the quality of performing the exercise varies significantly among the six participant, as evident in the barplot below.
 
-```{r}
-name_per_classe <-table(raw_data$classe, raw_data$user_name)
-
-barplot(name_per_classe,
-xlab = "Subject",
-ylab = "Frequency",
-main="Exercise Quality by Subject",
-col = as.factor(rownames(name_per_classe)),
-beside=TRUE
-)
-
-legend("topright" ,legend= rownames(name_per_classe), fill  = as.factor(rownames(name_per_classe)))
+```{r ref.label="barplot_username_classe", echo=FALSE, message=FALSE, warning=FALSE}
+# Draw a barplot for counts of each classe per username
 ```
 
 The aim of the classification model is to classify if exercise was completed correctly (class A) as well as classifying the type of error made ( class: B, C, D and E). Since the task given was to predict the class of 20 unknown observations. A model with an accuracy higher than 95% is needed. For example, the probability of a model with 95% accuracy to predict all cases (20/20) correctly is $p{20} = 0.95^20 = 0.36$. In contrast, a model with 99% accuracy will achieve $0.99^20 = 0.8$ probability in predicting the 20 cases correctly. 
 
 # Data PreProcessing
 
-## Load Libraries
-```{r, message=FALSE, warning=FALSE, include=FALSE}
+The raw data file has 19622 observations and 160 variable.
+
+Firstly, looking at the plot below for the proportion of missing data among the dataset variables, it can be noticed that it has many variables with mostly missing and meaningless values (100 out of the 160 variables). Thus, their contribution to the predition of the 'classe' variable is insignificant and we have to omit these variables.
+
+Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. Those incluse non-sensory measurements like: 'X'(row number), time and date related variables.
+
+The rest of the variables have no missing values and are ready for further processing.
+
+```{r ref.label="data_cleaning", message=FALSE, warning=FALSE, include=FALSE}
+# Data cleaning step
+```
+
+
+# Data Modeling
+
+## Cross Validation & Out of Sample Error Estimation
+
+K-fold cross validation is used to estimate the out of sample error, which is a reasonable balance between prediction accuracy and the computation time. The advantage of this method is that it matters less how the data gets divided. Every data point gets to be in a test set exactly once, and gets to be in a training set k-1 times. The variance of the resulting estimate is reduced as k is increased. The disadvantage of this method is that the training algorithm has to be rerun from scratch k times, which means it takes k times as much computation to make an evaluation. The results are then aggregated to create an overall estimate of the out of sample error. 
+
+### Model 1: Linear Discriminant Analysis 
+
+This model was selected since it is a relatively simple classification algorithm with fast training and prediction speed. However, it has a low average predictive accuracy and does not automatically learns feature interactions. Therefore, it could help in serving as a baseline for prediction accuracy.
+
+```{r}
+
+```
+
+The model scored an overall accuracy of 99.85%, with the highest sensitivity being 1 for classifying an exercise as class A when it is indeed A. The model also achieved high sensitivity values for other classes (B, C, D and E) as well. The confusion matrix illustrates that a classification model based on linear discriminant analysis have sufficient accuracy to expect perfect or near-perfect classification of our unknown validation cases.
+
+### Model 2: Random Forest
+
+The random forest model, being an ensemble learning method for classification, uses multiple learning algorithms to obtain better predictive performance than could be obtained from any of the constituent learning algorithms alone. Random forests have a high predictive accuracy, automatically learns feature interactions and handles lots of irrelevant features well. However, results have a less interpretability than linear discriminant analysis and it has a slow training speed. Same as LDA model, k-fold cross validation with five folds are used.
+
+```{r}
+
+```
+
+### Model 3: Neural Networks
+
+Neural Networks is a powerful computational data model that is able to capture and represent complex input/output relationships. A neural network can be thought of as a network of “neurons” organised in layers. The predictors (or inputs) form the bottom layer, and the forecasts (or outputs) form the top layer. There may be intermediate layers containing “hidden neurons”. NNet have a high predictive accuracy, automatically learns feature interactions and handles lots of irrelevant features well. However, results are difficult to interpret and has a slow training speed. Same as LDA model, k-fold cross validation with five folds are used.
+
+```{r}
+
+```
+
+
+# Reference
+
+- Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.
+
+
+# Appendix
+
+```{r load_libraries, message=FALSE, warning=FALSE}
 library(caret)
 library(ggplot2)
 library(knitr)
 library(VIM)
+library(grid)
+library(gridExtra)
 ```
 
-## Download  and Read the Data
 
-```{r, message=FALSE, warning=FALSE, include=FALSE}
+```{r data_download_read, eval=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
 dataset_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 validation_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 dataset_filename <- "./data/pml-training.csv"
@@ -85,109 +135,147 @@ raw_data <- read.table("./data/pml-training.csv", header = TRUE, sep = ",",  na.
 validation_set <- read.table("./data/pml-testing.csv", header = TRUE, sep = ",",  na.strings = c(NA, ""))
 ```
 
-The raw data file has 19622 observations and 160 variable.
+```{r count_classe_table, message=FALSE, warning=FALSE, message=FALSE}
+classe_table <- table(raw_data$classe)
+classe_percent <- (100*classe_table)/length(raw_data$classe)
+kable(rbind(classe_table, classe_percent))
+```
 
-## Clean the data
+```{r barplot_username_classe, message=FALSE, warning=FALSE}
+name_per_classe <-table(raw_data$classe, raw_data$user_name)
 
-Firstly, looking at the plot below for the proportion of missing data among the dataset variables, it can be noticed that it has many variables with mostly missing and meaningless values (100 out of the 160 variables). Thus, their contribution to the predition of the 'classe' variable is insignificant and we have to omit these variables.
+barplot(name_per_classe,
+xlab = "Subject",
+ylab = "Frequency",
+main="Exercise Quality by Subject",
+col = as.factor(rownames(name_per_classe)),
+beside=TRUE
+)
 
-Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. Those incluse non-sensory measurements like: 'X'(row number), time and date related variables.
+legend("topright" ,legend= rownames(name_per_classe), fill  = as.factor(rownames(name_per_classe)))
+```
 
-The rest of the variables have no missing values and are ready for further processing.
-
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r data_cleaning, message=FALSE, warning=FALSE}
 aggr(raw_data, prop=T, numbers=T)
 mojority_NA_columns <- which(sapply(raw_data, function(x) sum(is.na(x)) >(nrow(raw_data)*0.9)))
 cleaned_data <- raw_data[, -mojority_NA_columns]
 cleaned_data <- cleaned_data[, -c(1,3,4,5,6)]
 ```
 
-
-# Data Modeling
-
-## Cross Validation & Out of Sample Error Estimation
-
-K-fold cross validation is used to estimate the out of sample error, which is a reasonable balance between prediction accuracy and the computation time. The advantage of this method is that it matters less how the data gets divided. Every data point gets to be in a test set exactly once, and gets to be in a training set k-1 times. The variance of the resulting estimate is reduced as k is increased. The disadvantage of this method is that the training algorithm has to be rerun from scratch k times, which means it takes k times as much computation to make an evaluation. The results are then aggregated to create an overall estimate of the out of sample error. 
-
-### Model 1: Linear Discriminant Analysis 
-
-This model was selected since it is a relatively simple classification algorithm with fast training and prediction speed. However, it has a low average predictive accuracy and does not automatically learns feature interactions. Therefore, it could help in serving as a baseline for prediction accuracy.
-
-The model scored an overall accuracy of 99.85%, with the highest sensitivity being 1 for classifying an exercise as class A when it is indeed A. The model also achieved high sensitivity values for other classes (B, C, D and E) as well. The confusion matrix illustrates that a classification model based on linear discriminant analysis have sufficient accuracy to expect perfect or near-perfect classification of our unknown validation cases.
-
-### Model 2: Random Forest
-
-The random forest model, being an ensemble learning method for classification, uses multiple learning algorithms to obtain better predictive performance than could be obtained from any of the constituent learning algorithms alone. Random forests have a high predictive accuracy, automatically learns feature interactions and handles lots of irrelevant features well. However, results have a less interpretability than linear discriminant analysis and it has a slow training speed. Same as LDA model, k-fold cross validation with five folds are used.
-
-```{r, message=FALSE, warning=FALSE, include=FALSE}
-library(parallel)
-library(doParallel)
-library(mlbench)
-
+```{r data_partition, message=FALSE, warning=FALSE}
 set.seed(55555)
 inTrain <- createDataPartition(y=cleaned_data$classe,
 p=0.7, list=FALSE)
 training <- cleaned_data[inTrain,]
 testing <- cleaned_data[-inTrain,]
+```
 
-cluster <- makeCluster(detectCores() ) # convention to leave 1 core for OS
+
+```{r start_parallel, eval=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+library(parallel)
+library(doParallel)
+library(mlbench)
+cluster <- makeCluster(detectCores())
 registerDoParallel(cluster)
+```
 
+```{r lda_model, message=FALSE, warning=FALSE}
 intervalStart <- Sys.time()
 lda_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
 lda_model <- train(classe~., data = training, methods= 'lda', trControl = lda_control)
 intervalEnd <- Sys.time()
 
 paste("Linear Discriminant Analysis Model took: ", intervalEnd- intervalStart, attr(intervalEnd- intervalStart, "units"))
+lda_time <- as.numeric(intervalEnd- intervalStart)
 
 lda_test_predict <- predict(lda_model, testing)
-confusionMatrix(lda_test_predict, testing$classe)
+lda_conf_mat <- confusionMatrix(lda_test_predict, testing$classe)
+lda_conf_mat
+```
 
-##################################
+```{r rf_model, message=FALSE, warning=FALSE}
 intervalStart <- Sys.time()
 rf_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
 rf_model <- train(classe~., data = training, methods= 'rf', trControl = rf_control)
 intervalEnd <- Sys.time()
 
 paste("Random Forest Model took: ", intervalEnd- intervalStart, attr(intervalEnd- intervalStart, "units"))
+rf_time <- as.numeric(intervalEnd- intervalStart)
 
 rf_test_predict <- predict(rf_model, testing)
-confusionMatrix(rf_test_predict, testing$classe)
-##################################
+rf_conf_mat <- confusionMatrix(rf_test_predict, testing$classe)
+rf_conf_mat
+```
 
-##################################
+```{r nnet_model, message=FALSE, warning=FALSE}
 intervalStart <- Sys.time()
 nnet_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
 nnet_model <- train(classe~., data = training, methods= 'nnet', trControl = nnet_control)
 intervalEnd <- Sys.time()
 
 paste("Neural Networl Model took: ", intervalEnd- intervalStart, attr(intervalEnd- intervalStart, "units"))
+nnet_time <- as.numeric(intervalEnd- intervalStart)
 
 nnet_test_predict <- predict(nnet_model, testing)
-confusionMatrix(_test_predict, testing$classe)
-##################################
+nnet_conf_mat <- confusionMatrix(nnet_test_predict, testing$classe)
+nnet_conf_mat
+```
 
-train_control <- trainControl(method="cv", number=10, allowParallel = TRUE)
-model_RF <- train(classe~., data = training, methods = "rf",trControl = train_control)
-
+```{r stop_parallel, message=FALSE, warning=FALSE}
 stopCluster(cluster)
 registerDoSEQ()
+```
 
-predict_RF <- predict(model_RF, testing)
-confusionMatrix(testing$classe, predict_RF)
+```{r models_summary}
+models_name <- c("Linear Discriminant Analysis", "Random Forest", "Neural Networks")
+models_accuracy <- c(lda_conf_mat$overall[1], rf_conf_mat$overall[1], nnet_conf_mat$overall[1])
+OOSE <- 1- models_accuracy
+models_sensitivity_A <- c(lda_conf_mat$byClass[1,1],rf_conf_mat$byClass[1,1], nnet_conf_mat$byClass[1,1])
+correct_pred_prob <- models_accuracy^20
+models_time <- c(lda_time, rf_time, nnet_time)
+successful_pred <- c("Yes", "Yes", "Yes")
 
+parameters_name <- c("","Accuracy", "Out of Sample Error", "Class A Sensitivity", "20 Succesful Prediction Prob.", "Cases Successfully Predicted", "Training Time")
+
+tb1 <- rbind(models_name, models_accuracy, OOSE, models_sensitivity_A, correct_pred_prob, successful_pred, models_time)
+
+```
+
+```{r var_imp_plot}
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+par(mfrow=c(1,3))
+
+varImpPlot(lda_model$finalModel,
+           main="Linear Discriminant Analysis",
+           n.var = 15,
+           type=2)
+
+varImpPlot(rf_model$finalModel,
+           main="Random Forest",
+           n.var = 15,
+           type=2)
+varImpPlot(nnet_model$finalModel,
+           main="Neural Networks",
+           n.var = 15,
+           type=2)
+```
+
+```{r}
+
+par(mfrow=c(1,3))
+
+plot(lda_model,
+     main="Linear Discriminant Analysis")
+plot(rf_model,
+     main="Random Forest")
+plot(lda_model,
+     main="Neural Networks")
 
 ```
 
 
-- how you built your model,
-    - Different models tried
-    - Comparison and evaluation of the different models.
-- how you used cross validation, 
-- what you think the expected out of sample error is,
-- why you made the choices you did.
-
-Reference
-
-- Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6. 
+plot(modFit2,
+     main="Accuracy by Predictor Count"
