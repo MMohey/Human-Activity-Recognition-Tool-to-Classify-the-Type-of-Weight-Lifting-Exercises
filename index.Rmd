@@ -7,30 +7,36 @@ output:
     keep_md: yes
 ---
 
+
 # Executive Summary
 
 
+The aim of this project is to predict the quality of weight lifting exercises through classification of data from from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. The project starts with exploratory data analysis and data cleaning, where 100 out of the 160 variables were neglected as they mostly had missing values. Then, three predictive models (Linear Discriminant Analysis, Random Forest and Neural Networks) were built and an evaluation and comparison of their performance was presented. Though, all three models achieved near perfect accuracy (lowest model achieved 99.83 %) and all of them predicted the 20 cases in the validation data set correctly. However, Random Forest model was selected, because it has a higher tolerance to missing values and irrelevant attributes. In addition, it had great capability dealing with discrete, binary, continuous attributes and handles model parameters better than the other two algorithms.
 
-## Background
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, **the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise**. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. The participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), while the other 4 classes (B, C, D and E) correspond to common mistakes.
+# Background
+
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self-movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behaviour, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, **the goal will be to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants to predict the manner in which they did the exercise**. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. The participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), while the other 4 classes (B, C, D and E) correspond to common mistakes.
 
 Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4d1GCDX2m
 
+
 # Exploratory Data Analysis
 
-In the dataset given, there is 19622 observations and 160 variable.
+
+In the dataset given, there is 19622 observations and 160 variables.
 
 The dependent variable, 'Classe', is a categorical variable corresponding to the five different ways of doing the weight lifting exercise: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
 
 The rest of the variable corresponds to measurements from date, time, belt, arm, forearm and dumbbell sensors.
 
 
-```{r ref.label="load_libraries", echo=FALSE, message=FALSE, warning=FALSE}
+```{r ref.label="load_libraries", message=FALSE, warning=FALSE, include=FALSE}
 # Load the libraries needed.
 ```
 
-```{r ref.label="data_download_read",message=FALSE, warning=FALSE}
+```{r ref.label="data_download_read", message=FALSE, warning=FALSE, include=FALSE}
 # Download the Data and read it into R
 ```
 
@@ -40,21 +46,23 @@ The rest of the variable corresponds to measurements from date, time, belt, arm,
 
 As seen in the table above, class 'A' (corresponding to correctly performing the exercise) is most frequent class and counts to roughly 28% among the five classes available. 
 
-It is also worth noticing that frequency of class 'A' and hence the quality of performing the exercise varies significantly among the six participant, as evident in the barplot below.
+It is also worth noticing that frequency of class 'A' and hence the quality of performing the exercise varies significantly among the six participant, as evident in the bar plot below.
 
 ```{r ref.label="barplot_username_classe", echo=FALSE, message=FALSE, warning=FALSE}
 # Draw a barplot for counts of each classe per username
 ```
 
-The aim of the classification model is to classify if exercise was completed correctly (class A) as well as classifying the type of error made ( class: B, C, D and E). Since the task given was to predict the class of 20 unknown observations. A model with an accuracy higher than 95% is needed. For example, the probability of a model with 95% accuracy to predict all cases (20/20) correctly is $p{20} = 0.95^20 = 0.36$. In contrast, a model with 99% accuracy will achieve $0.99^20 = 0.8$ probability in predicting the 20 cases correctly. 
+The aim of the classification model is to classify if exercise was completed correctly (class A) as well as classifying the type of error made (class: B, C, D and E). Since the task given was to predict the class of 20 unknown observations. A model with an accuracy higher than 95% is needed. For example, the probability of a model with 95% accuracy to predict all cases (20/20) correctly is $p{20} = 0.95^20 = 0.36$. In contrast, a model with 99% accuracy will achieve $0.99^20 = 0.8$ probability in predicting the 20 cases correctly. 
+
 
 # Data PreProcessing
 
-The raw data file has 19622 observations and 160 variable.
 
-Firstly, looking at the plot below for the proportion of missing data among the dataset variables, it can be noticed that it has many variables with mostly missing and meaningless values (100 out of the 160 variables). Thus, their contribution to the predition of the 'classe' variable is insignificant and we have to omit these variables.
+The raw data file has 19622 observations and 160 variables.
 
-Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. Those incluse non-sensory measurements like: 'X'(row number), time and date related variables.
+Firstly, looking at the plot below for the proportion of missing data among the dataset variables, it can be noticed that it has many variables with mostly missing and meaningless values (100 out of the 160 variables). Thus, their contribution to the prediction of the 'classe' variable is insignificant and we have to omit these variables.
+
+Secondly, it is wise to remove variables that do not contribute to the prediction of the 'classe' variable. These include non-sensory measurements like: 'X'(row number), time and date related variables.
 
 The rest of the variables have no missing values and are ready for further processing.
 
@@ -63,57 +71,76 @@ The rest of the variables have no missing values and are ready for further proce
 ```
 
 
-# Data Modeling
+# Data Modelling
+
 
 ## Cross Validation & Out of Sample Error Estimation
 
 K-fold cross validation is used to estimate the out of sample error, which is a reasonable balance between prediction accuracy and the computation time. The advantage of this method is that it matters less how the data gets divided. Every data point gets to be in a test set exactly once, and gets to be in a training set k-1 times. The variance of the resulting estimate is reduced as k is increased. The disadvantage of this method is that the training algorithm has to be rerun from scratch k times, which means it takes k times as much computation to make an evaluation. The results are then aggregated to create an overall estimate of the out of sample error. 
 
-### Model 1: Linear Discriminant Analysis 
+## Model 1: Linear Discriminant Analysis 
 
 This model was selected since it is a relatively simple classification algorithm to find a linear combination of features that characterizes or separates two or more classes of objects or events. The resulting combination may be used as a linear classifier. 
 
-```{r}
-
+```{r ref.label="lda_model", eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Run LDA Model
 ```
 
-### Model 2: Random Forest
+## Model 2: Random Forest
 
 The random forest model, being an ensemble learning method for classification, uses multiple learning algorithms to obtain better predictive performance than could be obtained from any of the constituent learning algorithms alone. Random forests have a high predictive accuracy, automatically learns feature interactions and handles lots of irrelevant features well. However, results have a less interpretability than linear discriminant analysis and it has a slow training speed. Same as LDA model, k-fold cross validation with five folds are used.
 
-```{r}
-
+```{r ref.label="lda_model", eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Run RF Model
 ```
 
-### Model 3: Neural Networks
+## Model 3: Neural Networks
 
 Neural Networks is a powerful computational data model that is able to capture and represent complex input/output relationships. A neural network can be thought of as a network of “neurons” organised in layers. The predictors (or inputs) form the bottom layer, and the forecasts (or outputs) form the top layer. There may be intermediate layers containing “hidden neurons”. NNet have a high predictive accuracy, automatically learns feature interactions and handles lots of irrelevant features well. However, results are difficult to interpret and has a slow training speed. Same as LDA model, k-fold cross validation with five folds are used.
 
-```{r}
-
+```{r ref.label="lda_model", eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# Run NNet Model
 ```
+
 
 # Models Analysis and Evaluation
 
+
 All three models implemented achieved a very high predictive accuracy, when applied to our test set (30% of the dataset). The highest accuracy was 0.9986 by Random Forest model, whereas Linear Discriminant Analysis and Neural Networks achieved 0.9984 and 0.9983 respectively. Such slight differences in the accuracy score ( difference between highest and lowest accuracy is approx. 0.0003) is very subtle and could be negligible when making a decision of which algorithm to choose.
 
+```{r ref.label="models_summary", echo=FALSE, message=FALSE, warning=FALSE}
+# Models Summary
+```
+
 As seen in the figure below, all models achieve optimal results with only 30 predictors out 54 predictors resulted after cleaning data. As shown in the figure below for the variable importance plot, the top 8 most important predictors for all three models are:`num_window`, `roll_belt`, `pitch_forearm`, `yaw_belt`, `magnet_drumbell_z`, `magnet_drumbell_y`, `pitch_belt` and `roll_forearm`. 
+
+```{r ref.label="var_imp_plot", echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE}
+# Figure for Variable Importance Plot
+```
+
+```{r ref.label="models_summary", echo=FALSE, fig.height=10, fig.width=8, message=FALSE, warning=FALSE}
+# Figure for Predictors Count
+```
 
 Since the three models achieved a very high prediction accuracy when applied to the held out test set. The Out of Sample Error Rate is expected to be less than 0.2%
 
 Finally, testing all three models on the validation set, all three models successfully classified the 20 cases of the validation set.
 
+
 # Conclusion
 
-As explained in the previous section, all three models achieved a near perfect accuarcy and predicted all the 20 cases in the validation data set. Given that the results presented in the summary table above look to be very close, it appears that a choice between either of the three algorithms is about the same. However, due to the properties of the dataset used in this report. It is sensible to choose Random Forest model over Linear Discriminant Analysis and Neural Networks. This is because it has a higher tolerance to missing values, irrelevant attributes, dealing with discrete/binary/continuous
-attributes and model parameter handling than the other two algorithm.
+
+As explained in the previous section, all three models achieved a near perfect accuracy and predicted all the 20 cases in the validation data set. Given that the results presented in the summary table above look to be very close, it appears that a choice between either of the three algorithms is about the same. However, due to the properties of the dataset used in this report. It is sensible to choose Random Forest model over Linear Discriminant Analysis and Neural Networks. This is because it has a higher tolerance to missing values and irrelevant attributes. In addition, it had great capability dealing with discrete, binary, continuous attributes and handles model parameters better than the other two algorithms.
+
 
 # Reference
+
 
 - Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.
 
 
 # Appendix
+
 
 ```{r load_libraries, message=FALSE, warning=FALSE}
 library(caret)
@@ -122,6 +149,8 @@ library(knitr)
 library(VIM)
 library(grid)
 library(gridExtra)
+library(randomForest)
+load("~/Human-Activity-Recognition-Tool-to-Classify-the-Type-of-Weight-Lifting-Exercises/workspace_for_testing.RData")
 ```
 
 
@@ -187,11 +216,14 @@ testing <- cleaned_data[-inTrain,]
 library(parallel)
 library(doParallel)
 library(mlbench)
+library(iterators)
+library(foreach)
+
 cluster <- makeCluster(detectCores())
 registerDoParallel(cluster)
 ```
 
-```{r lda_model, message=FALSE, warning=FALSE}
+```{r lda_model, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 intervalStart <- Sys.time()
 lda_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
 lda_model <- train(classe~., data = training, methods= 'lda', trControl = lda_control)
@@ -205,7 +237,7 @@ lda_conf_mat <- confusionMatrix(lda_test_predict, testing$classe)
 lda_conf_mat
 ```
 
-```{r rf_model, message=FALSE, warning=FALSE}
+```{r rf_model, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 intervalStart <- Sys.time()
 rf_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
 rf_model <- train(classe~., data = training, methods= 'rf', trControl = rf_control)
@@ -219,7 +251,7 @@ rf_conf_mat <- confusionMatrix(rf_test_predict, testing$classe)
 rf_conf_mat
 ```
 
-```{r nnet_model, message=FALSE, warning=FALSE}
+```{r nnet_model, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 intervalStart <- Sys.time()
 nnet_control <- trainControl(method = 'cv', number = 5, allowParallel = TRUE)
 nnet_model <- train(classe~., data = training, methods= 'nnet', trControl = nnet_control)
@@ -233,12 +265,12 @@ nnet_conf_mat <- confusionMatrix(nnet_test_predict, testing$classe)
 nnet_conf_mat
 ```
 
-```{r stop_parallel, message=FALSE, warning=FALSE}
+```{r stop_parallel, echo=FALSE, message=FALSE, warning=FALSE}
 stopCluster(cluster)
 registerDoSEQ()
 ```
 
-```{r models_summary}
+```{r models_summary, message=FALSE, warning=FALSE}
 models_name <- c("Linear Discriminant Analysis", "Random Forest", "Neural Networks")
 models_accuracy <- c(lda_conf_mat$overall[1], rf_conf_mat$overall[1], nnet_conf_mat$overall[1])
 OOSE <- 1- models_accuracy
@@ -251,9 +283,15 @@ parameters_name <- c("","Accuracy", "Out of Sample Error", "Class A Sensitivity"
 
 tb1 <- rbind(models_name, models_accuracy, OOSE, models_sensitivity_A, correct_pred_prob, successful_pred, models_time)
 
+tbl5 <- data.frame(Model = models_name,Accuracy = models_accuracy, Out_of_Sample_Error= OOSE, Class_A_Sensitivity = models_sensitivity_A, Prob_Succesful_Prediction = correct_pred_prob, All_Cases_Successfully_Predicted = successful_pred, Training_Time = models_time)
+
+hy <- t(tbl5)
+colnames(hy) <- hy[1,]
+kable(hy[-1,])
+
 ```
 
-```{r var_imp_plot}
+```{r var_imp_plot, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(grid)
 library(gridExtra)
@@ -275,20 +313,21 @@ varImpPlot(nnet_model$finalModel,
            type=2)
 ```
 
-```{r predictors_count_plot}
+```{r predictors_count_plot, message=FALSE, warning=FALSE}
 
 par(mfrow = c(1,3))
 
-plot(lda_model,
-     main="Linear Discriminant Analysis")
-plot(rf_model,
+p1 <- plot(lda_model,
+     main="Linear Discriminant Analysis" )
+p2 <- plot(rf_model,
      main="Random Forest")
-plot(lda_model,
+p3 <- plot(lda_model,
      main="Neural Networks")
+grid.arrange(p1,p2, p3)
 
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 actual_answers <- c("B" ,"A","B","A", "A","E", "D", "B", "A", "A","B", "C", "B", "A", "E", "E", "A", "B", "B", "B")
 
 lda_predicted_validation <- predict(lda_model,validation_set)
@@ -314,4 +353,5 @@ pml_write_files = function(x){
 predicted_chars <- as.character(lda_predicted_validation)
 pml_write_files(predicted_chars)
 ```
+
 
