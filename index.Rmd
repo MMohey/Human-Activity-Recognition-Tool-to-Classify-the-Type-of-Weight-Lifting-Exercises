@@ -71,13 +71,11 @@ K-fold cross validation is used to estimate the out of sample error, which is a 
 
 ### Model 1: Linear Discriminant Analysis 
 
-This model was selected since it is a relatively simple classification algorithm with fast training and prediction speed. However, it has a low average predictive accuracy and does not automatically learns feature interactions. Therefore, it could help in serving as a baseline for prediction accuracy.
+This model was selected since it is a relatively simple classification algorithm to find a linear combination of features that characterizes or separates two or more classes of objects or events. The resulting combination may be used as a linear classifier. 
 
 ```{r}
 
 ```
-
-The model scored an overall accuracy of 99.85%, with the highest sensitivity being 1 for classifying an exercise as class A when it is indeed A. The model also achieved high sensitivity values for other classes (B, C, D and E) as well. The confusion matrix illustrates that a classification model based on linear discriminant analysis have sufficient accuracy to expect perfect or near-perfect classification of our unknown validation cases.
 
 ### Model 2: Random Forest
 
@@ -105,18 +103,10 @@ Since the three models achieved a very high prediction accuracy when applied to 
 
 Finally, testing all three models on the validation set, all three models successfully classified the 20 cases of the validation set.
 
-
-
-Expected Out of Sample Error
-
-Given the accuracy level achieved via cross-validation of the model against multiple folds of the training data set, we expect the out of sample error rate to be less than 1%. Therefore, we estimate a 0.936 probability that we will correctly classify all 20 of the validation cases.
-
-The results from our random forest model were excellent. Applying the model to the test data set that we held out of of the model building steps, we find that the model accurately predicts 99.67% of the test cases, incorrectly classifying only 26 of the 7,846 observations. The error rate for the test data set is only 0.33%, giving us a .936 probability that the model would correctly classify all 20 validation cases.
-
-Finally, our accuracy at predicting the 20 cases in the validation data set was 100%. All in all, a good effort for our first attempt at a random forest.
-
 # Conclusion
- As explained in the previous section, all three models achieved a very high accuracy... time... interpretability ... therefore LDA is better
+
+As explained in the previous section, all three models achieved a near perfect accuarcy and predicted all the 20 cases in the validation data set. Given that the results presented in the summary table above look to be very close, it appears that a choice between either of the three algorithms is about the same. However, due to the properties of the dataset used in this report. It is sensible to choose Random Forest model over Linear Discriminant Analysis and Neural Networks. This is because it has a higher tolerance to missing values, irrelevant attributes, dealing with discrete/binary/continuous
+attributes and model parameter handling than the other two algorithm.
 
 # Reference
 
